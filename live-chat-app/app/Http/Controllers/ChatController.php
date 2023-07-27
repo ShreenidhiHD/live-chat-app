@@ -1,37 +1,116 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\User;
+use App\Models\Chat;
+use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
 
 class ChatController extends Controller
 {
-    public function getChats(Request $request)
-    {
-        $user = $request->user();
+    // public function getChatMessages(Chat $chat)
+    // {
+    //     // // Ensure the requesting user is part of the chat
+    //     // if ($chat->customer_id !== auth()->id() && $chat->agent_id !== auth()->id()) {
+    //     //     return response()->json(['error' => 'User not part of this chat'], 403);
+    //     // }
     
-        // Get all chats the user is a member of
-        $chats = $user->chats;
+    //     // // Return the messages associated with the chat
+    //     // $messages = $chat->messages;
     
-        return response()->json($chats);
+    //     // // Returning messages and count in the response
+    //     // return response()->json([
+    //     //     'messages' => $messages,
+    //     //     'count' => $messages->count(),
+    //     // ]);
+    //      // Fetch the messages associated with the chat
+    // $messages = $chat->messages;
+
+    // // Returning messages and count in the response
+    // return response()->json([
+    //     'messages' => $messages,
+    //     'count' => $messages->count(),
+    // ]);
+    // }
+    public function getChatMessages(Chat $chat)
+{
+    // Fetch the messages associated with the chat, including the sender's role
+    $messages = $chat->messages->map(function ($message) {
+        // Access the sender information from the message relationship
+        $sender = $message->user; // Assuming the User model is related through 'user' relationship
+
+        // Return an array with the message data and sender's role
+        return [
+            'id' => $message->id,
+            'content' => $message->content,
+            'created_at' => $message->created_at,
+            'sender' => [
+                'id' => $sender->id,
+                'name' => $sender->name,
+                'email' => $sender->email,
+                'role' => $sender->role, // Include the sender's role
+            ],
+        ];
+    });
+
+    // Returning messages and count in the response
+    return response()->json([
+        'messages' => $messages,
+        'count' => $messages->count(),
+    ]);
+}
+
+    
+    
+    public function getLatestChat(Request $request)
+{
+    $user = $request->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not authenticated'], 401);
     }
+
+    // Get the latest chat for the user
+    $chat = Chat::where('customer_id', $user->id)
+                 ->orderBy('created_at', 'desc')
+                 ->first();
+
+    if (!$chat) {
+        return response()->json(['error' => 'No chats found'], 404);
+    }
+
+    return response()->json($chat);
+}
+
+    
+public function getChats(Request $request)
+{
+    $user = $request->user();
+
+    if (!$user) {
+        return response()->json(['error' => 'User not authenticated'], 401);
+    }
+
+    // Fetch all chats along with the customer who created each chat
+    $chats = Chat::with('customer')->get();
+
+    return response()->json($chats);
+}
     public function createChat(Request $request)
     {
-        $request->validate([
-            'user_id' => 'required|exists:users,id'
-        ]);
-
-        $user = $request->user();
-        $otherUser = User::find($request->user_id);
-
-        // Create a new chat
-        $chat = Chat::create();
-
-        // Attach the users to the chat
-        $chat->users()->attach([$user->id, $otherUser->id]);
-
+        // Get the authenticated user's ID from the token
+        $customer_id = $request->user()->id;
+    
+        // Try to find an existing chat
+        $chat = Chat::firstOrCreate(['customer_id' => $customer_id]);
+    
+        // Return the existing or newly created chat
         return response()->json($chat);
     }
+    
+    
+
     public function readMessage(Request $request)
     {
         $request->validate([

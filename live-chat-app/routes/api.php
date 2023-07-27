@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\MessageController;
-
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,10 +24,13 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
-Route::post('/send', [MessageController::class, 'sendMessage']);
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/chats', 'ChatController@getChats');
-    Route::post('/chats', 'ChatController@createChat');
-    Route::post('/messages/read', 'ChatController@readMessage');
-    Route::post('/typing', 'ChatController@typing');
+    Route::post('/send', [MessageController::class, 'sendMessage']);
+    Route::get('agent/chats', [ChatController::class, 'getChats']);
+    Route::post('/chats', [ChatController::class, 'createChat']);
+    Route::post('/messages/read', [ChatController::class, 'readMessage']);
+    Route::post('/typing', [ChatController::class, 'typing']);    
+    Route::get('/chats/latest', [ChatController::class, 'getLatestChat']);
+    Route::get('/chats/{chat}/messages', [ChatController::class, 'getChatMessages']);
+
 });
