@@ -118,21 +118,15 @@ const UserChat = () => {
 
     fetchChatId();
   }, []);
-
-  const pusher = new Pusher('f48340963d2929a521dc', {
+  Pusher.logToConsole = true;
+  const pusher = new Pusher('995f625bed989b22d696', {
     cluster: 'ap2',
     debug: true,
   });
   useEffect(() => {
-    // Function to subscribe to the Pusher channel when chatId changes
     const subscribeToChannel = () => {
-      // Subscribe to the channel based on the current chatId
       const channel = pusher.subscribe(`chat.${chatId}`);
-  
-      // Event handler for the 'App.Events.MessageSent' event
-      channel.bind('App.Events.MessageSent', function (data) {
-        // Your event handling code here...
-        // For example, you can update the state with the received message:
+      channel.bind('message.sent', function (data) {
         console.log('Received Pusher Event:', data);
         if (data.message && data.message.chat_id === chatId) {
           setMessages((messages) => [...messages, data.message]);
@@ -140,12 +134,8 @@ const UserChat = () => {
       });
     };
 
-    // Call the subscribeToChannel function when chatId changes
     subscribeToChannel();
-
-    // Cleanup on component unmount
     return () => {
-      // Unsubscribe from the channel to prevent memory leaks
       pusher.unsubscribe(`chat.${chatId}`);
     };
   }, [chatId]);
@@ -174,7 +164,36 @@ const UserChat = () => {
       <Grid container sx={{ width: '100%', height: '90vh' }}>
         <Grid item xs={12}>
           <div style={{ height: '80vh', overflow: 'auto' }}>
-            <List sx={{ overflowY: 'auto' }}>
+          <List sx={{ overflowY: 'auto' }}>
+  {messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((message, index, self) => (
+    <React.Fragment key={message.id}>
+      {(index === 0 || new Date(self[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString()) &&
+        <ListItem>
+          <ListItemText 
+            align="center" 
+            primary={new Date(message.created_at).toLocaleDateString()}
+          />
+        </ListItem>
+      }
+      <ListItem>
+        <Grid container>
+          <Grid item xs={12}>
+            <ListItemText 
+              // just align all messages to the right or left, as you prefer
+              align="right" 
+              primary={message.content}
+              secondary={new Date(message.created_at).toLocaleTimeString()}
+              secondaryTypographyProps={{ variant: "body2" }}
+            />
+          </Grid>
+        </Grid>
+      </ListItem>
+    </React.Fragment>
+  ))}
+  <div ref={messagesEndRef} />
+</List>
+
+            {/* <List sx={{ overflowY: 'auto' }}>
               {messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((message, index, self) => (
                 <React.Fragment key={message.id}>
                   {(index === 0 || new Date(self[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString()) &&
@@ -204,7 +223,7 @@ const UserChat = () => {
                 </React.Fragment>
               ))}
               <div ref={messagesEndRef} />
-            </List>
+            </List> */}
           </div>
           <Divider />
           <Box sx={{ padding: '20px' }}>

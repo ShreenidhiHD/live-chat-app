@@ -71,36 +71,6 @@ const AgentChat = () => {
     }
   };
 
- 
-
-//   const handleSubmit = async (e) => {
-//     e.preventDefault();
-//     try {
-//       if (!chatId) {
-//         // If chatId is null, create a new chat and set chatId to the first chat's id
-//         const chatResponse = await axios.post(
-//           'http://localhost:8000/api/chats',
-//           {},
-//           { headers: { Authorization: `Bearer ${authToken}` }}
-//         );
-//         setChatId(chatResponse.data[0]?.id);
-//       }
-  
-//       await axios.post(
-//         'http://localhost:8000/api/send',
-//         { 
-//           content: newMessage,
-//           chat_id: chatId || chatId[0]?.id,
-//         },
-//         { headers: { Authorization: `Bearer ${authToken}` }}
-//       );
-//       fetchMessages(chatId);
-//       setNewMessage('');
-//     } catch (error) {
-//       console.error(error);
-//     }
-//   };
-  
 
 const handleSubmit = async (e) => {
     e.preventDefault();
@@ -128,7 +98,7 @@ const handleSubmit = async (e) => {
       console.log('Message Sent:', response.data);
   
       // Fetch messages again after sending a new one
-      fetchMessages(chatId);
+    //   fetchMessages(chatId);
       setNewMessage('');
     } catch (error) {
       console.error(error);
@@ -146,37 +116,38 @@ const handleSubmit = async (e) => {
   const handleLogout = () => {
     console.log('Handle logout here');
   }
- // Listen for real-time updates
- const pusher = new Pusher('f48340963d2929a521dc', {
-    cluster: 'ap2',
-    debug: true,
-  });
-  useEffect(() => {
-    // Function to subscribe to the Pusher channel when chatId changes
-    const subscribeToChannel = () => {
-      // Subscribe to the channel based on the current chatId
-      const channel = pusher.subscribe(`chat.${chatId}`);
-  
-      // Event handler for the 'App.Events.MessageSent' event
-      channel.bind('App.Events.MessageSent', function (data) {
-        // Your event handling code here...
-        // For example, you can update the state with the received message:
-        console.log('Received Pusher Event:', data);
-        if (data.message && data.message.chat_id === chatId) {
-          setMessages((messages) => [...messages, data.message]);
-        }
-      });
-    };
 
-    // Call the subscribeToChannel function when chatId changes
+  Pusher.logToConsole = true;
+  useEffect(() => {
+    // Initialize Pusher once
+    const pusher = new Pusher('995f625bed989b22d696', {
+      cluster: 'ap2',
+      debug: true,
+    });
+
+    // Function to handle subscription to a new channel when chatId changes
+    const subscribeToChannel = () => {
+      if (chatId) {
+        const channel = pusher.subscribe(`chat.${chatId}`);
+        channel.bind('message.sent', function (data) {
+          console.log('Received Pusher Event:', data);
+          if (data.message && data.message.chat_id === chatId) {
+            setMessages((messages) => [...messages, data.message]);
+          }
+        });
+      }
+    };
+    
     subscribeToChannel();
 
-    // Cleanup on component unmount
+    // Cleanup function
     return () => {
-      // Unsubscribe from the channel to prevent memory leaks
-      pusher.unsubscribe(`chat.${chatId}`);
+      if (chatId) {
+        pusher.unsubscribe(`chat.${chatId}`);
+      }
     };
-  }, [chatId]);
+  }, [chatId]); // Dependency array with chatId
+
   
   return (
     <div>

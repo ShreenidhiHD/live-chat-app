@@ -31,7 +31,10 @@ class MessageController extends Controller
         Log::info('About to trigger MessageSent event');
     
         // Dispatch an event.
-        event(new MessageSent($message));
+        broadcast(new MessageSent($message))->toOthers();
+
+
+        // event(new MessageSent($request->input('message')));
     
         // Log another message after the event is triggered
         Log::info('MessageSent event triggered');
