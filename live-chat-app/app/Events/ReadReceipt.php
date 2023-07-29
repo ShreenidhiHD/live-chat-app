@@ -12,16 +12,18 @@ class ReadReceipt implements ShouldBroadcast
 
     public $username;
     public $messageId;
+    public $seen;
 
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct($username, $messageId)
+    public function __construct($username, $messageId, $seen)
     {
         $this->username = $username;
         $this->messageId = $messageId;
+        $this->seen = $seen;
     }
 
     /**
@@ -33,4 +35,5 @@ class ReadReceipt implements ShouldBroadcast
     {
         return new \Illuminate\Broadcasting\Channel('chat');
     }
+
 }
