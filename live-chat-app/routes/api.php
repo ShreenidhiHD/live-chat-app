@@ -32,5 +32,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/typing', [ChatController::class, 'typing']);    
     Route::get('/chats/latest', [ChatController::class, 'getLatestChat']);
     Route::get('/chats/{chat}/messages', [ChatController::class, 'getChatMessages']);
+    Route::get('/userdata', [UserController::class, 'userprofile']);
 
 });

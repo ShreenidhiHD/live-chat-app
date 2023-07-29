@@ -45,5 +45,20 @@ class UserController extends Controller
     
         return response()->json(['token' => $token, 'user' => $user]);
     }
-    
+
+    public function userprofile(Request $request)
+    {
+
+       $user = $request->user();
+
+        if ($user) {
+            $userId = $user->id;
+            $userName = $user->name;
+        
+            return [
+                'curid' => $userId,
+                'curname' => $userName,
+            ];
+        }   
+    }
 }

@@ -26,14 +26,89 @@ const AgentChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-
+  const [user, setUser] = useState({});  
   const authToken = localStorage.getItem('authToken');
   const navigate = useNavigate();
 
   const handleProfileClick = () => {
     navigate('/profile'); // "/profile" should be the route you've defined for your Profile page.
   };
+ 
+  useEffect(() => {
+    let pusher;
+    let channel;
+    if (chatId) {
+      fetchMessages(chatId);
+    }
+ 
+    const fetchUserDataAndMessage = async () => {
+      try {
+        // Fetch user data
+        const userResponse = await axios.get('http://localhost:8000/api/userdata', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        setUser(userResponse.data);
+  
+        // Fetch chatId
+        const chatIdResponse = await axios.get(`http://localhost:8000/api/agent/chats`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
 
+        setChats(chatIdResponse.data);
+        const chatId = chatIdResponse.data.id;
+        setChatId(chatId);
+       
+        // Fetch chat messages
+        const messagesResponse = await axios.get(`http://localhost:8000/api/chats/${chatId}/messages`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+  
+        const fetchedMessages = messagesResponse.data.messages.map(message => {
+          message.isUserMessage = message.sender.id === userResponse.data.curid;
+          return message;
+      });
+      
+  
+        setMessages(fetchedMessages);
+  
+        // Initialize Pusher here, after user data has been fetched
+        pusher = new Pusher('63ec3433f5f1ad17bcb5', {
+          cluster: 'ap2',
+          debug: true,
+        });
+  
+        channel = pusher.subscribe(`chat.${chatId}`);
+        channel.bind('message.sent', function (data) {
+          if (data.message && data.message.chat_id === chatId) {
+              const isUserMessage = data.message.sender.id === userResponse.data.curid;
+              setMessages((messages) => [...messages, { ...data.message, isUserMessage }]);
+          }
+      });
+      
+        
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+    fetchUserDataAndMessage();
+
+    // Cleanup function
+    return () => {
+      if (chatId) {
+        pusher.unsubscribe(`chat.${chatId}`);
+      }
+    };
+  }, []);
+  
+  
+ 
+ 
+  
+  
+  
   useEffect(() => {
     // Fetch chats list on component mount
     const fetchChats = async () => {
@@ -90,6 +165,8 @@ const handleSubmit = async (e) => {
         { 
           content: newMessage,
           chat_id: chatId || chatResponse.data.id,
+          sender_id: user.curid,
+          sender_name: user.curname, 
         },
         { headers: { Authorization: `Bearer ${authToken}` }}
       );
@@ -104,14 +181,12 @@ const handleSubmit = async (e) => {
       console.error(error);
     }
   };
+  
 
   const filteredChats = chats.filter(chat =>
     chat.customer.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  const user = {
-    name: 'Agent Name',
-    avatar: 'https://mui.com/static/images/avatar/1.jpg'
-  };
+  
 
   const handleLogout = () => {
     console.log('Handle logout here');
@@ -120,7 +195,7 @@ const handleSubmit = async (e) => {
   Pusher.logToConsole = true;
   useEffect(() => {
     // Initialize Pusher once
-    const pusher = new Pusher('995f625bed989b22d696', {
+    const pusher = new Pusher('63ec3433f5f1ad17bcb5', {
       cluster: 'ap2',
       debug: true,
     });
@@ -132,7 +207,8 @@ const handleSubmit = async (e) => {
         channel.bind('message.sent', function (data) {
           console.log('Received Pusher Event:', data);
           if (data.message && data.message.chat_id === chatId) {
-            setMessages((messages) => [...messages, data.message]);
+            // setMessages((messages) => [...messages, data.message]);
+            setMessages((messages) => [...messages, { ...data.message, sender: data.sender }]);
           }
         });
       }
@@ -158,7 +234,7 @@ const handleSubmit = async (e) => {
               <AccountCircle />
             </IconButton>
             <Typography variant="h6" style={{flexGrow: 1}}>
-              {user.name}
+              {user.curname}
             </Typography>
             <IconButton edge="end" color="inherit" aria-label="logout" onClick={handleLogout}>
               <ExitToAppIcon />
@@ -195,12 +271,31 @@ const handleSubmit = async (e) => {
             </Typography>
           </Toolbar>
           <List sx={{ height: '70vh', overflowY: 'auto' }}>
-            {messages.map((message, index) => (
-              <ListItem key={index}>
-                <ListItemText align={message.sender.role === 'agent' ? "right" : "left"} primary={message.content} secondary={new Date(message.created_at).toLocaleString()} />
-              </ListItem>
-            ))}
-          </List>
+          {messages.map((message, index) => {
+    const isOutgoing = message.sender_id === user.curid;
+    console.log(isOutgoing);  
+    return (
+      <ListItem key={index}>
+      <ListItemText
+        align={isOutgoing ? 'right' : 'left'}
+        
+        primary={message.content}
+        secondary={
+          <>
+            <Typography component="span" variant="body2" color="textPrimary">
+              {message && message.sender ? message.sender.name : 'unknown'} -{' '}
+            </Typography>
+            {new Date(message.created_at).toLocaleString()}
+          </>
+        }
+      />
+    </ListItem>
+    
+    );
+  })}
+
+</List>
+
           <Divider />
           <Grid container style={{ padding: '20px' }}>
             <Grid item xs={11}>
@@ -217,3 +312,4 @@ const handleSubmit = async (e) => {
 }
 
 export default AgentChat;
+

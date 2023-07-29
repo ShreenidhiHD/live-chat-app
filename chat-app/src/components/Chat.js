@@ -6,67 +6,91 @@ import SendIcon from '@mui/icons-material/Send';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import { useNavigate } from 'react-router-dom';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Paper from '@mui/material/Paper';
 
 const UserChat = () => {
+  const [chats, setChats] = useState([]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [chatId, setChatId] = useState(null);
-  const [user, setUser] = useState({});  // you might want to fetch the user data somewhere
-
+  const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState({});  
   const authToken = localStorage.getItem('authToken');
   const navigate = useNavigate();
 
-  const fetchMessages = async (chatId) => {
-    try {
-      const response = await axios.get(`http://localhost:8000/api/chats/${chatId}/messages`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+  const currentSubscription = useRef(null);
 
-      if (response.data.messages) {
-        setMessages(response.data.messages.map(message => ({ ...message, content: message.content })));
-      } else {
-        console.error('Invalid response format:', response.data);
-      }
-    } catch (error) {
-      console.error(error);
-    }
+  const handleProfileClick = () => {
+    navigate('/profile'); // "/profile" should be the route you've defined for your Profile page.
   };
-  const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }
+  useEffect(() => {
+    let pusher;
+    let channel;
+  
+    const fetchUserDataAndMessages = async () => {
+      try {
+        // Fetch user data
+        const userResponse = await axios.get('http://localhost:8000/api/userdata', {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+        setUser(userResponse.data);
+  
+        // Fetch chatId
+        const chatIdResponse = await axios.get(`http://localhost:8000/api/chats/latest`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        const chatId = chatIdResponse.data.id;
+        setChatId(chatId);
+  
+        // Fetch chat messages
+        const messagesResponse = await axios.get(`http://localhost:8000/api/chats/${chatId}/messages`, {
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+  
+        const fetchedMessages = messagesResponse.data.messages.map(message => {
+          message.isUserMessage = message.sender.id === userResponse.data.curid;
+          return message;
+        });
+  
+        setMessages(fetchedMessages);
+  
+        // Initialize Pusher here, after user data has been fetched
+        pusher = new Pusher('63ec3433f5f1ad17bcb5', {
+          cluster: 'ap2',
+          debug: true,
+        });
 
-  useEffect(scrollToBottom, [messages]);
+        if (currentSubscription.current === `chat.${chatId}`) return;
+  
+        channel = pusher.subscribe(`chat.${chatId}`);
+        channel.bind('message.sent', function (data) {
+          if (data.message && data.message.chat_id === chatId) {
+            const isUserMessage = data.message.sender.id === userResponse.data.curid;
+            setMessages((messages) => [...messages, { ...data.message, isUserMessage }]);
+          }
+        });
 
-  // const handleSubmit = async (e) => {
-  //   e.preventDefault();
-  //   try {
-  //     let chatResponse;
-  //     if (!chatId) {
-  //       chatResponse = await axios.post(
-  //         'http://localhost:8000/api/chats',
-  //         {},
-  //         { headers: { Authorization: `Bearer ${authToken}` }}
-  //       );
-  //       setChatId(chatResponse.data.id);
-  //     }
-
-  //     await axios.post(
-  //       'http://localhost:8000/api/send',
-  //       { 
-  //         content: newMessage,
-  //         chat_id: chatId || chatResponse.data.id,
-  //       },
-  //       { headers: { Authorization: `Bearer ${authToken}` }}
-  //     );
-  //     fetchMessages(chatId); // Fetch messages again after sending a new one
-  //     setNewMessage('');
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
+        currentSubscription.current = `chat.${chatId}`;
+        
+      } catch (error) {
+        console.error(error);
+      }
+    };
+  
+    fetchUserDataAndMessages();
+  
+    // Cleanup function
+    return () => {
+      if (chatId) {
+        pusher.unsubscribe(`chat.${chatId}`);
+      }
+    };
+  }, []);
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -79,163 +103,96 @@ const UserChat = () => {
         );
         setChatId(chatResponse.data.id);
       }
-  
+
       const response = await axios.post(
         'http://localhost:8000/api/send',
         { 
           content: newMessage,
           chat_id: chatId || chatResponse.data.id,
+          sender_id: user.curid,
+          sender_name: user.curname, 
         },
         { headers: { Authorization: `Bearer ${authToken}` }}
       );
-  
+
       // Handle the response here if needed
       console.log('Message Sent:', response.data);
-  
-      // Fetch messages again after sending a new one
-      fetchMessages(chatId);
+
+      // Do not add the message to the state here. Let the Pusher listener handle it.
       setNewMessage('');
     } catch (error) {
       console.error(error);
     }
   };
+
+  const filteredChats = chats.filter(chat =>
+    chat.customer.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
   
-  // Fetch chatId on component mount
-  useEffect(() => {
-    const fetchChatId = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8000/api/chats/latest`, {
-          headers: { Authorization: `Bearer ${authToken}` },
-        });
-
-        setChatId(response.data.id);
-        fetchMessages(response.data.id); // pass response.data.id here
-
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    fetchChatId();
-  }, []);
-  Pusher.logToConsole = true;
-  const pusher = new Pusher('995f625bed989b22d696', {
-    cluster: 'ap2',
-    debug: true,
-  });
-  useEffect(() => {
-    const subscribeToChannel = () => {
-      const channel = pusher.subscribe(`chat.${chatId}`);
-      channel.bind('message.sent', function (data) {
-        console.log('Received Pusher Event:', data);
-        if (data.message && data.message.chat_id === chatId) {
-          setMessages((messages) => [...messages, data.message]);
-        }
-      });
-    };
-
-    subscribeToChannel();
-    return () => {
-      pusher.unsubscribe(`chat.${chatId}`);
-    };
-  }, [chatId]);
 
   const handleLogout = () => {
-    // handle logout
-  };
-
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
+    console.log('Handle logout here');
+  }
 
   return (
     <div>
-      <Toolbar variant="dense" sx={{ backgroundColor: '#3f51b5', color: 'white' }}>
-        <IconButton edge="start" color="inherit" aria-label="user-profile" onClick={handleProfileClick}>
-          <AccountCircle />
-        </IconButton>
-        <Typography variant="h6" style={{flexGrow: 1}}>
-          {user.name}
-        </Typography>
-        <IconButton edge="end" color="inherit" aria-label="logout" onClick={handleLogout}>
-          <ExitToAppIcon />
-        </IconButton>
-      </Toolbar>
-      <Grid container sx={{ width: '100%', height: '90vh' }}>
+      <Grid container>
         <Grid item xs={12}>
-          <div style={{ height: '80vh', overflow: 'auto' }}>
-          <List sx={{ overflowY: 'auto' }}>
-  {messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((message, index, self) => (
-    <React.Fragment key={message.id}>
-      {(index === 0 || new Date(self[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString()) &&
-        <ListItem>
-          <ListItemText 
-            align="center" 
-            primary={new Date(message.created_at).toLocaleDateString()}
-          />
-        </ListItem>
-      }
-      <ListItem>
-        <Grid container>
-          <Grid item xs={12}>
-            <ListItemText 
-              // just align all messages to the right or left, as you prefer
-              align="right" 
-              primary={message.content}
-              secondary={new Date(message.created_at).toLocaleTimeString()}
-              secondaryTypographyProps={{ variant: "body2" }}
-            />
-          </Grid>
+          <Toolbar variant="dense" sx={{ backgroundColor: '#3f51b5', color: 'white' }}>
+            <IconButton edge="start" color="inherit" aria-label="user-profile" onClick={handleProfileClick}>
+              <AccountCircle />
+            </IconButton>
+            <Typography variant="h6" style={{flexGrow: 1}}>
+              {user.curname}
+            </Typography>
+            <IconButton edge="end" color="inherit" aria-label="logout" onClick={handleLogout}>
+              <ExitToAppIcon />
+            </IconButton>
+          </Toolbar>
         </Grid>
-      </ListItem>
-    </React.Fragment>
-  ))}
-  <div ref={messagesEndRef} />
-</List>
+      </Grid>
+      <Grid container component={Paper} sx={{ width: '100%', height: '90vh' }}>
+        
+        <Grid item xs={12}>
+          <Toolbar variant="dense" sx={{ backgroundColor: '#f0f0f0' }}>
+            <Typography variant="h6">
+              {chats.find(chat => chat.id === chatId)?.customer.name}
+            </Typography>
+          </Toolbar>
+          <List sx={{ height: '70vh', overflowY: 'auto' }}>
+            {messages.map((message, index) => {
+              const isOutgoing = message.sender_id === user.curid;
+              console.log(isOutgoing);  
+              return (
+                <ListItem key={index}>
+                  <ListItemText
+                    align={isOutgoing ? 'right' : 'left'}
+                    
+                    primary={message.content}
+                    secondary={
+                      <>
+                        <Typography component="span" variant="body2" color="textPrimary">
+                          {message && message.sender ? message.sender.name : 'unknown'} -{' '}
+                        </Typography>
+                        {new Date(message.created_at).toLocaleString()}
+                      </>
+                    }
+                  />
+                </ListItem>
+              );
+            })}
+          </List>
 
-            {/* <List sx={{ overflowY: 'auto' }}>
-              {messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((message, index, self) => (
-                <React.Fragment key={message.id}>
-                  {(index === 0 || new Date(self[index - 1].created_at).toDateString() !== new Date(message.created_at).toDateString()) &&
-                    <ListItem>
-                      <ListItemText 
-                        align="center" 
-                        primary={new Date(message.created_at).toLocaleDateString()}
-                      />
-                    </ListItem>
-                  }
-                  <ListItem>
-                    <Grid container>
-                      <Grid item xs={12}>
-                        <ListItemText 
-                          align={message.sender.role === 'agent' ? "left" : "right"} 
-                          primary={message.content}
-                          secondary={
-                            message.sender.role === 'agent'
-                              ? `${message.sender.name} - ${new Date(message.created_at).toLocaleTimeString()}`
-                              : new Date(message.created_at).toLocaleTimeString()
-                          }
-                          secondaryTypographyProps={{ variant: "body2" }}
-                        />
-                      </Grid>
-                    </Grid>
-                  </ListItem>
-                </React.Fragment>
-              ))}
-              <div ref={messagesEndRef} />
-            </List> */}
-          </div>
+
           <Divider />
-          <Box sx={{ padding: '20px' }}>
-            <Grid container spacing={1}>
-              <Grid item xs={11}>
-                <TextField id="outlined-basic-email" label="Type Something" fullWidth value={newMessage} onChange={e => setNewMessage(e.target.value)} />
-              </Grid>
-              <Grid item xs={1} align="right">
-                <Fab color="primary" aria-label="add" onClick={handleSubmit}><SendIcon /></Fab>
-              </Grid>
+          <Grid container style={{ padding: '20px' }}>
+            <Grid item xs={11}>
+              <TextField id="outlined-basic-email" label="Type Something" fullWidth value={newMessage} onChange={e => setNewMessage(e.target.value)} />
             </Grid>
-          </Box>
+            <Grid xs={1} align="right">
+              <Fab color="primary" aria-label="add" onClick={handleSubmit}><SendIcon /></Fab>
+            </Grid>
+          </Grid>
         </Grid>
       </Grid>
     </div>
