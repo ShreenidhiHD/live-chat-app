@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Grid, TextField, List, Toolbar, IconButton, Divider } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import AccountCircle from '@mui/icons-material/AccountCircle';
@@ -9,35 +9,47 @@ import Typography from '@mui/material/Typography';
 import Typing from './Typing'; 
 import Message from './Message';
 import MainBar from './Mainbar';
-const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange, handleSendMessage }) => {
+
+const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange, handleSendMessage ,messageReadStatus}) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
   const handleProfileClick = () => {
     navigate('/profile');
   };
-
+  
+  console.log('Message Read Status:', messageReadStatus);
+  
   const handleLogout = () => {
     console.log('Handle logout here');
   };
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]); 
+
   return (
     <div>
       <Grid container>
-        
         <Grid item xs={12} sx={{ height: '90vh' }}>
           <Paper style={{ display: 'flex', flexDirection: 'column', height: '80vh' }}>
             {messages && messages.length > 0 ? (
               <List style={{ flexGrow: 1, overflow: 'auto' }}>
                 {messages.map((message, index) => (
-                  <Message key={index} message={message} user={user} isUserMessage={message.isUserMessage} />
+                 
+                  <Message key={index} message={message} user={user} isUserMessage={message.isUserMessage}  seen={messageReadStatus[message.id]} />
+                  
                 ))}
+                
                 <div ref={messagesEndRef} />
               </List>
             ) : (
               <Message message={null} isUserMessage={false} /> 
             )}
-
             <Divider />
             <Grid container style={{ padding: '20px', position: 'absolute', bottom: 0, left: 0, right: 0 }}>
               <Grid item xs={11}>

@@ -6,7 +6,7 @@ use App\Events\ReadReceipt;
 use App\Models\User;
 use App\Models\Chat;
 use App\Models\Message;
-
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 
 use Illuminate\Http\Request;
@@ -117,31 +117,39 @@ class ChatController extends Controller
 
 
 
-    public function readMessage(Request $request)
-    {
-        $request->validate([
-            'message_id' => 'required|exists:messages,id'
-        ]);
-    
-        $message = Message::find($request->message_id);
-        $user = $request->user();
-        $currentuser = $user->id;
-    
-        if ($currentuser != $message->user_id) {
-            // Retrieve all messages with a lower id and the same user_id
-            $messages = Message::where('id', '<', $message->id)->where('user_id', $message->user_id)->get();
-    
-            foreach ($messages as $msg) {
-                $msg->seen = true;
-                $msg->save();
-    
-                broadcast(new ReadReceipt($user->name, $msg->id, $msg->seen));
-            }
+   
+
+public function readMessage(Request $request)
+{
+    $request->validate([
+        'message_id' => 'required|exists:messages,id'
+    ]);
+
+    $message = Message::find($request->message_id);
+    $user = $request->user();
+    $currentUserId = $user->id;
+
+    if ($currentUserId != $message->user_id) {
+        // Retrieve all messages with a lower id and the same user_id
+        $messages = Message::where('id', '<', $message->id)
+            ->where('user_id', $message->user_id)
+            ->where('seen', false) // Only mark unseen messages as read
+            ->get();
+
+        foreach ($messages as $msg) {
+            $msg->seen = true;
+            $msg->save();
+
+            Log::info('About to trigger ReadReceipt event for message: ' . $msg->id);
+            broadcast(new ReadReceipt($msg->id, true));
+            Log::info('ReadReceipt event triggered for message: ' . $msg->id);
+
         }
-    
-        return response()->json('Previous messages marked as read');
     }
-    
+
+    return response()->json('Previous messages marked as read');
+}
+
 
 
     public function typing(Request $request)

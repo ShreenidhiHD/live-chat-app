@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 
-const Message = ({ message, user }) => {
+const Message = ({ message, user, seen }) => {
   const isUserMessage = message && user && message.sender.id === user.curid;
 
   const messageStyles = {
@@ -31,21 +31,18 @@ const Message = ({ message, user }) => {
     );
   }
 
-  const { content, created_at, seen } = message;
-  const messageBgColor = isUserMessage ? '#1976d2' : '#1976d2';
-  const textColor = isUserMessage ? '#ffffff' : '#ffffff';
+  const { content, created_at } = message;
+  const messageBgColor = isUserMessage ? '#1976d2' : '#f5f5f5';
+  const textColor = isUserMessage ? '#ffffff' : '#212121';
 
   return (
     <Box sx={{display: 'flex', justifyContent: isUserMessage ? 'flex-end' : 'flex-start'}}>
       <Box sx={{ ...messageStyles, bgcolor: messageBgColor, color: textColor }}>
-      <Box sx={{ textAlign: 'right', opacity: 0.7 }}>
+        <Box sx={{ textAlign: 'right', opacity: 0.7}}>
           <Typography variant="caption">
-          {/* {message.sender.name} */}
+            {message.sender.name}
           </Typography>
-         
         </Box>
-         
-        
         <Typography variant="body2" component="p">
           {content}
         </Typography>
@@ -54,7 +51,7 @@ const Message = ({ message, user }) => {
             {new Date(created_at).toLocaleString()}
           </Typography>
           <Typography variant="caption" color="white">
-            {seen ? 'Seen' : 'Delivered'}
+            {seen === undefined ? 'Sending...' : seen ? 'Seen' : 'Delivered'}
           </Typography>
         </Box>
       </Box>

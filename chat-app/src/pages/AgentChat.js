@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Grid from '@mui/material/Grid';
 import ChatList from '../components/ChatList';
 import ChatWindow from '../components/ChatWindow';
 import MainBar from '../components/Mainbar';
 import { fetchUserData } from '../api/userApi';
-import { fetchChats, fetchMessages, sendMessage } from '../api/chatApi';
-
+import { fetchChats, fetchMessages, sendMessage, markMessageAsRead } from '../api/chatApi';
+import usePusher from '../services/pusherService';
 
 const AgentChat = () => {
   const [messages, setMessages] = useState([]);
@@ -15,8 +15,13 @@ const AgentChat = () => {
   const [user, setUser] = useState(null);
   const [chats, setChats] = useState([]);
   const authToken = localStorage.getItem('authToken');
+  const { bindMessageSent, bindReadReceipt } = usePusher(selectedChatId);
+  const debouncedFetchRef = useRef(null);
+  const [messageReadStatus, setMessageReadStatus] = useState({});
 
-  // Fetch user data and chats list when the component mounts
+  // useRef to store the current value of messages
+  const messagesRef = useRef(messages);
+
   useEffect(() => {
     const fetchAndSetData = async () => {
       const userData = await fetchUserData(authToken);
@@ -29,17 +34,83 @@ const AgentChat = () => {
     fetchAndSetData();
   }, [authToken]);
 
-  // Fetch messages when a chat is selected
-  useEffect(() => {
+  const fetchAndSetMessages = async () => {
     if (selectedChatId) {
-      const fetchAndSetMessages = async () => {
-        const messagesData = await fetchMessages(authToken, selectedChatId);
-        setMessages(messagesData.messages);
+      const messagesData = await fetchMessages(authToken, selectedChatId);
+
+      // Initialize the seen status for each message
+      const initialMessageReadStatus = messagesData.messages.reduce((acc, message) => {
+        acc[message.id] = message.seen;
+        return acc;
+      }, {});
+
+      setMessageReadStatus(initialMessageReadStatus);
+      setMessages(messagesData.messages.map(message => ({
+        ...message,
+        seen: initialMessageReadStatus[message.id] || false,
+      })));
+    } else {
+      setMessages([]);
+    }
+  };
+
+  useEffect(() => {
+    clearTimeout(debouncedFetchRef.current);
+    debouncedFetchRef.current = setTimeout(fetchAndSetMessages, 1000);
+  }, [authToken, selectedChatId]);
+
+  useEffect(() => {
+    if (bindMessageSent) {
+      const handleNewMessage = async (newMessageData) => {
+        console.log('New message data:', newMessageData);
+        clearTimeout(debouncedFetchRef.current);
+        debouncedFetchRef.current = setTimeout(fetchAndSetMessages, 1000);
+
+        // Mark the new message as unread initially
+        newMessageData.message.seen = false;
+
+        // Add the new message to the messages state
+        setMessages((prevMessages) => [...prevMessages, newMessageData.message]);
+
+        // If the chat window is open and the selected chat is the same as the new message's chat, mark it as read
+        if (selectedChatId === newMessageData.message.chat_id) {
+          console.log('Calling markMessageAsRead API...');
+          await markMessageAsRead(authToken, newMessageData.message.id);
+          console.log('markMessageAsRead API called.');
+        }
       };
 
-      fetchAndSetMessages();
+      // Bind the handleNewMessage callback
+      bindMessageSent(handleNewMessage);
     }
-  }, [authToken, selectedChatId]);
+
+    if (bindReadReceipt) {
+      console.log('Attempting to bind ReadReceipt...');
+      bindReadReceipt(async (data) => {
+        console.log('Received read receipt:', data);
+
+        // Check if the received data is correct and if it contains the messageId and seen status.
+        const index = messagesRef.current.findIndex((message) => message.id === data.messageId);
+
+        if (index !== -1) {
+          console.log(`Attempting to update the message at index ${index}`);
+          const updatedMessages = [
+            ...messagesRef.current.slice(0, index),
+            { ...messagesRef.current[index], seen: data.seen },
+            ...messagesRef.current.slice(index + 1),
+          ];
+
+          // Verify if the updatedMessages array is correct and if it contains the updated "seen" status.
+          setMessages(updatedMessages);
+        } else {
+          // If the message is not found in the messages array, log an error or check if there's any issue with the received data.
+          console.error('Message not found in messages array.');
+        }
+
+        setMessageReadStatus(prevStatus => ({ ...prevStatus, [data.messageId]: data.seen }));
+      });
+    }
+  }, [authToken, selectedChatId, bindMessageSent, bindReadReceipt]);
 
   const handleNewMessageChange = (event) => {
     setNewMessage(event.target.value);
@@ -47,23 +118,31 @@ const AgentChat = () => {
 
   const handleSendMessage = async () => {
     if (newMessage === '') return;
-  
+
     try {
+      const messageData = {
+        content: newMessage,
+        chatId: selectedChatId,
+        sender: {
+          id: user.curid,
+        },
+      };
+
       await sendMessage(authToken, selectedChatId, newMessage, user);
-      const messagesData = await fetchMessages(authToken, selectedChatId);
-      setMessages(messagesData.messages);
+      const newMessageObj = { ...messageData, id: Math.random().toString(), seen: false };
+      setMessages((prevMessages) => [...prevMessages, newMessageObj]);
+      setMessageReadStatus((prevStatus) => ({ ...prevStatus, [newMessageObj.id]: false }));
       setNewMessage('');
     } catch (error) {
       console.error(error);
     }
   };
-  
 
   return (
     <div>
       <Grid container>
         <Grid item xs={12}>
-          <MainBar/>
+          <MainBar />
         </Grid>
         <Grid item xs={3}>
           <ChatList
@@ -83,6 +162,7 @@ const AgentChat = () => {
               newMessage={newMessage}
               handleNewMessageChange={handleNewMessageChange}
               handleSendMessage={handleSendMessage}
+              messageReadStatus={messageReadStatus}
             />
           )}
         </Grid>

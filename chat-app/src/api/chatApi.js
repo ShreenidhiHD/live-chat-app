@@ -31,8 +31,11 @@ export const fetchMessages = async (authToken, chatId) => {
     });
     return response.data;
   } catch (error) {
-    console.error(error);
-    throw error;
+    if (error.response && error.response.status === 429) {
+      console.log('Too many requests, please slow down');
+    } else {
+      console.error(error);
+    }
   }
 };
 
