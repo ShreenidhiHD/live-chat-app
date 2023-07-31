@@ -88,3 +88,20 @@ export const createChat = async (authToken) => {
       throw error;
     }
   };
+
+  export const clearChat = async (authToken, chatId) => {
+    try {
+      const response = await axios.post(
+        'http://localhost:8000/api/clearChat',
+        { chat_id: chatId },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      console.log('Chat Cleared:', response.data);
+      // You can handle the response if needed (e.g., show a success message).
+    } catch (error) {
+      console.error('Failed to clear chat:', error);
+      // Handle the error if the chat clearing request fails.
+      // For example, show an error message to the user.
+      throw error;
+    }
+  };

@@ -158,4 +158,30 @@ public function readMessage(Request $request)
         return response()->json('Broadcasted typing event');
     }
 
+    function clearChat($chatId)
+{
+    try {
+        // Find the requested chat by its ID
+        $chat = Chat::findOrFail($chatId);
+
+        // Delete the related messages from the messages table
+        $chat->messages()->delete();
+
+        // Optionally, you can also delete the chat record itself if needed
+        // Uncomment the following line if you want to delete the chat record as well
+        // $chat->delete();
+
+        // Return success message or any other response you want
+        return response()->json(['message' => 'Chat cleared successfully'], 200);
+    } catch (\Exception $e) {
+        // Handle the error if the chat or messages cannot be found or any other error occurs
+        return response()->json(['error' => 'Failed to clear chat'], 500);
+    }
+}
+
+
+
+
+
+
 }
