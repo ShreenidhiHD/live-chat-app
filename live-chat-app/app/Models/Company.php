@@ -24,4 +24,8 @@ class Company extends Model
     {
         return $this->hasMany(Chat::class);
     }
+    public function owners()
+    {
+        return $this->hasMany(User::class, 'company_id');
+    }
 }

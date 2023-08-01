@@ -10,7 +10,7 @@ import Typing from './Typing';
 import Message from './Message';
 import MainBar from './Mainbar';
 
-const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange, handleSendMessage ,messageReadStatus}) => {
+const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange, handleSendMessage }) => {
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
 
@@ -18,7 +18,7 @@ const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange
     navigate('/profile');
   };
   
-  console.log('Message Read Status:', messageReadStatus);
+ 
   
   const handleLogout = () => {
     console.log('Handle logout here');
@@ -31,7 +31,7 @@ const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange
   useEffect(() => {
     scrollToBottom();
   }, [messages]); 
-
+  
   return (
     <div>
       <Grid container>
@@ -41,7 +41,8 @@ const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange
               <List style={{ flexGrow: 1, overflow: 'auto' }}>
                 {messages.map((message, index) => (
                  
-                  <Message key={index} message={message} user={user} isUserMessage={message.isUserMessage}  seen={messageReadStatus[message.id]} />
+                <Message key={index} message={message} user={user} isUserMessage={message.isUserMessage}  />
+
                   
                 ))}
                 
