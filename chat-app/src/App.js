@@ -5,7 +5,12 @@ import Chat from './components/Chat'; // Make sure this path is correct
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './components/Register';
 import ChatTable from './components/ChatTable';
-import AgentChat from './components/AgentChat';
+import AgentChat from './pages/AgentChat';
+import UserChat from './pages/UserChat';
+import OwnerDashboard from './pages/OwnerDashboard';
+import UserProfile from './pages/UserProfile';
+import ListAgents from './pages/ListAgents';
+import RegisterUser from './components/RegisterUser';
 
 function App() {
   return (
@@ -16,6 +21,11 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/chattable" element={<ChatTable />} />
         <Route path="/agentchat" element={<AgentChat />} />
+        <Route path="/userchat" element={<UserChat />} />
+        <Route path="/ownerdashboard" element={<OwnerDashboard />} />
+        <Route path="/userprofile" element={<UserProfile />} />
+        <Route path="/manage-agents" element={<ListAgents />} />
+        <Route path="/register-user" element={<RegisterUser />} />
         
       </Routes>
     </Router>

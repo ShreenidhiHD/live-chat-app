@@ -21,8 +21,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-
-Route::post('/register', [UserController::class, 'register']);
+Route::post('/registeruser', [UserController::class, 'registeruser']);
+Route::post('/register', [UserController::class, 'registerUserWithCompany']);
 Route::post('/login', [UserController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/send', [MessageController::class, 'sendMessage']);
@@ -32,5 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/typing', [ChatController::class, 'typing']);    
     Route::get('/chats/latest', [ChatController::class, 'getLatestChat']);
     Route::get('/chats/{chat}/messages', [ChatController::class, 'getChatMessages']);
-
+    Route::get('/userdata', [UserController::class, 'userprofile']);
+    Route::get('/userrole', [UserController::class, 'userrole']);
+    Route::post('/registeranotheruser', [UserController::class, 'register']);
+    Route::get('/admin/agents', [UserController::class, 'agentslist']);
+    Route::middleware('auth:sanctum')->put('/user/change-password', [UserController::class, 'changePassword']);
+    
+   
 });
