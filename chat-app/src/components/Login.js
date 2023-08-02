@@ -52,6 +52,9 @@ const Login = () => {
   return (
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Card>
+      <Button variant="contained" color="primary" href="/register-user">
+              Chat With Our Agent
+              </Button>
         <CardContent>
           <h1>Login</h1>
           <form onSubmit={handleSubmit}>

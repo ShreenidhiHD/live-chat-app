@@ -10,6 +10,7 @@ import UserChat from './pages/UserChat';
 import OwnerDashboard from './pages/OwnerDashboard';
 import UserProfile from './pages/UserProfile';
 import ListAgents from './pages/ListAgents';
+import RegisterUser from './components/RegisterUser';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="/ownerdashboard" element={<OwnerDashboard />} />
         <Route path="/userprofile" element={<UserProfile />} />
         <Route path="/manage-agents" element={<ListAgents />} />
+        <Route path="/register-user" element={<RegisterUser />} />
         
       </Routes>
     </Router>

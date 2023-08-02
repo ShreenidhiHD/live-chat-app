@@ -70,24 +70,25 @@ class ChatController extends Controller
 
 
     public function getLatestChat(Request $request)
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        if (!$user) {
-            return response()->json(['error' => 'User not authenticated'], 401);
-        }
-
-        // Get the latest chat for the user
-        $chat = Chat::where('customer_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->first();
-
-        if (!$chat) {
-            return response()->json(['error' => 'No chats found'], 404);
-        }
-
-        return response()->json($chat);
+    if (!$user) {
+        return response()->json(['error' => 'User not authenticated'], 401);
     }
+
+    // Get the latest chat for the user
+    $chat = Chat::where('customer_id', $user->id)
+        ->orderBy('created_at', 'desc')
+        ->first();
+
+    // If no chat found, create a new one
+    if (!$chat) {
+        return $this->createChat($request);
+    }
+
+    return response()->json($chat);
+}
 
 
     public function getChats(Request $request)

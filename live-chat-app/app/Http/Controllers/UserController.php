@@ -11,25 +11,25 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    // public function register(Request $request)
-    // {
-    //     $request->validate([
-    //         'name' => 'required',
-    //         'email' => 'required|email|unique:users',
-    //         'password' => 'required|required'
-    //     ]);
+    public function registeruser(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|required'
+        ]);
     
-    //     $user = User::create([
-    //         'name' => $request->name,
-    //         'email' => $request->email,
-    //         'password' => Hash::make($request->password),
-    //         'role' => $request->role ?? 'customer',
-    //     ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role ?? 'customer',
+        ]);
     
-    //     $token = $user->createToken('apptoken')->plainTextToken;
+        $token = $user->createToken('apptoken')->plainTextToken;
     
-    //     return response()->json(['token' => $token, 'user' => $user], 201);
-    // }
+        return response()->json(['token' => $token, 'user' => $user], 201);
+    }
     
     public function changePassword(Request $request)
     {
