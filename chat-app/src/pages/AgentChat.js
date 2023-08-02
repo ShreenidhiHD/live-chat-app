@@ -35,18 +35,24 @@ const AgentChat = () => {
     console.log('Current User:', user);
 }, [user]);
 
-  useEffect(() => {
-    const fetchAndSetMessages = async () => {
-      if (selectedChatId) {
-        const messagesData = await fetchMessages(authToken, selectedChatId);
-        setMessages(messagesData.messages);
-      } else {
-        setMessages([]);
-      }
-    };
-    
-    fetchAndSetMessages();
-  }, [authToken, selectedChatId]);
+useEffect(() => {
+  const fetchAndSetMessages = async () => {
+    if (selectedChatId) {
+      const messagesData = await fetchMessages(authToken, selectedChatId);
+      
+      // Add delivered messages to messagesToMarkAsRead
+      const deliveredMessages = messagesData.messages.filter(message => message.status === false);
+      setMessagesToMarkAsRead(deliveredMessages.map(message => message.id));
+      
+      setMessages(messagesData.messages);
+    } else {
+      setMessages([]);
+    }
+  };
+  
+  fetchAndSetMessages();
+}, [authToken, selectedChatId]);
+
   
   useEffect(() => {
     if (bindMessageSent) {
@@ -87,7 +93,7 @@ const AgentChat = () => {
       }
     };
   
-    const intervalId = setInterval(markMessagesAsRead, 5000); // Mark messages as read every 5 seconds
+    const intervalId = setInterval(markMessagesAsRead, 1000); // Mark messages as read every 5 seconds
     return () => clearInterval(intervalId); // Clear the interval when the component unmounts
   }, [messagesToMarkAsRead, authToken]);
   

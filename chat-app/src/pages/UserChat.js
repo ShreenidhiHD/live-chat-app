@@ -21,16 +21,22 @@ const UserChat = () => {
       try {
         const fetchedUserData = await fetchUserData(authToken);
         setUserData(fetchedUserData);
-
+    
         const latestChatData = await fetchLatestChat(authToken);
         setChatId(latestChatData.id);
-
+    
         const messagesData = await fetchMessages(authToken, latestChatData.id);
+        
+        // Add delivered messages to messagesToMarkAsRead
+        const deliveredMessages = messagesData.messages.filter(message => message.status === false);
+        setMessagesToMarkAsRead(deliveredMessages.map(message => message.id));
+        
         setMessages(messagesData.messages);
       } catch (error) {
         console.error('Error in fetchData: ', error);
       }
     };
+    
 
     fetchData();
   }, [authToken]);
@@ -74,7 +80,7 @@ const UserChat = () => {
       }
     };
   
-    const intervalId = setInterval(markMessagesAsRead, 5000); // Mark messages as read every 5 seconds
+    const intervalId = setInterval(markMessagesAsRead, 1000); // Mark messages as read every 5 seconds
     return () => clearInterval(intervalId); // Clear the interval when the component unmounts
   }, [messagesToMarkAsRead, authToken]);
   
