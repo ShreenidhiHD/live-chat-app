@@ -3,8 +3,9 @@ import ChatWindow from '../components/ChatWindow';
 import MainBar from '../components/Mainbar';
 import Grid from '@mui/material/Grid';
 import { fetchUserData } from '../api/userApi';
-import { fetchLatestChat, fetchMessages, createChat, sendMessage } from '../api/chatApi';
+import { fetchLatestChat, fetchMessages, createChat, sendMessage ,markMessageAsRead} from '../api/chatApi';
 import usePusher from '../services/pusherService';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const UserChat = () => {
   const [user, setUserData] = useState(null);
@@ -12,8 +13,8 @@ const UserChat = () => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const authToken = localStorage.getItem('authToken');
-
-  const { bindMessageSent } = usePusher(chatId);
+  const [messagesToMarkAsRead, setMessagesToMarkAsRead] = useState([]);
+  const { bindMessageSent , bindReadReceipt} = usePusher(chatId);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -36,12 +37,12 @@ const UserChat = () => {
 
   useEffect(() => {
     if (bindMessageSent) {
-      const handleNewMessage = (newMessageData) => {
-       
-
-        // Mark the new message as unread initially
-        newMessageData.message.seen = false;
-        newMessageData.message.sender.name= user.name;
+      const handleNewMessage = async (newMessageData) => {
+        // Add the new message ID to the state
+        setMessagesToMarkAsRead((prevMessagesToMarkAsRead) => {
+          return [...prevMessagesToMarkAsRead, newMessageData.message.id];
+        });
+  
         // Add the new message to the messages state only if it's not already present
         setMessages((prevMessages) => {
           const existingMessage = prevMessages.find(msg => msg.id === newMessageData.message.id);
@@ -54,12 +55,51 @@ const UserChat = () => {
           }
         });
       };
-
+  
       // Bind the handleNewMessage callback
       bindMessageSent(handleNewMessage);
     }
   }, [bindMessageSent]);
-
+  
+  useEffect(() => {
+    const markMessagesAsRead = async () => {
+      if (messagesToMarkAsRead.length > 0) {
+        try {
+          await markMessageAsRead(authToken, messagesToMarkAsRead);
+          console.log('Messages Marked As Read:', messagesToMarkAsRead.length);
+          setMessagesToMarkAsRead([]); // Clear the array after marking the messages as read
+        } catch (error) {
+          console.error('Error marking messages as read:', error);
+        }
+      }
+    };
+  
+    const intervalId = setInterval(markMessagesAsRead, 5000); // Mark messages as read every 5 seconds
+    return () => clearInterval(intervalId); // Clear the interval when the component unmounts
+  }, [messagesToMarkAsRead, authToken]);
+  
+  useEffect(() => {
+    if (bindReadReceipt) {
+      const handleReadReceipt = (readReceiptData) => {
+        console.log(readReceiptData);
+        // Update the 'seen' value of the relevant message
+        setMessages((prevMessages) => {
+          return prevMessages.map((message) => {
+            if (message.id === readReceiptData.messageId) {
+              return {
+                ...message,
+                seen: readReceiptData.seen,
+              };
+            }
+            return message;
+          });
+        });
+      };
+  
+      // Bind the handleReadReceipt callback
+      bindReadReceipt(handleReadReceipt);
+    }
+  }, [bindReadReceipt]);
   const handleNewMessageChange = (e) => {
     setNewMessage(e.target.value);
   }
@@ -77,18 +117,27 @@ const UserChat = () => {
         },
       };
 
-      await sendMessage(authToken, chatId, newMessage, user);
+      await sendMessage(authToken, messageData);
       setNewMessage('');
     } catch (error) {
       console.error(error);
     }
   };
-  
-  
+  const handleLogout = () => {
+    setUserData(null);
+    // or navigate user to a different page
+  }
+  if (!user) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress color="primary" />
+      </div>
+    );
+  }
   return (
     <div>
       <Grid item xs={12}>
-        <MainBar />
+      <MainBar user={user} handleLogout={handleLogout}/>
       </Grid>
      
       <ChatWindow

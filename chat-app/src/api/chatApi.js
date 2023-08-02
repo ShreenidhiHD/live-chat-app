@@ -54,15 +54,15 @@ export const createChat = async (authToken) => {
     }
   };
   
-  export const sendMessage = async (authToken, chatId, newMessage, user) => {
+  export const sendMessage = async (authToken, messageData) => {
     try {
       const response = await axios.post(
         'http://localhost:8000/api/send',
         {
-          content: newMessage,
-          chat_id: chatId,
-          sender_id: user.curid,
-          sender_name: user.curname,
+          content: messageData.content,
+          chat_id: messageData.chatId,
+          sender_id: messageData.sender.id,
+          sender_name: messageData.sender.name,
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -73,18 +73,36 @@ export const createChat = async (authToken) => {
     }
   };
   
-  export const markMessageAsRead = async (authToken, messageId) => {
+  
+  // export const markMessageAsRead = async (authToken, messageId) => {
+  //   try {
+  //     const response = await axios.post(
+  //       'http://localhost:8000/api/messages/read',
+  //       {
+  //         message_id: messageId,
+  //       },
+  //       { headers: { Authorization: `Bearer ${authToken}` } }
+  //     );
+  //     console.log('Message Marked As Read:', response.data);
+  //   } catch (error) {
+  //     console.error(error);
+  //     throw error;
+  //   }
+  // };
+
+  export const markMessageAsRead = async (authToken, messageIds) => {
     try {
       const response = await axios.post(
         'http://localhost:8000/api/messages/read',
         {
-          message_id: messageId,
+          message_ids: messageIds,  // Note the change here
         },
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
-      console.log('Message Marked As Read:', response.data);
+      console.log('Messages Marked As Read:', response.data);
     } catch (error) {
       console.error(error);
       throw error;
     }
   };
+  

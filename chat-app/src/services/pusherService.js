@@ -1,20 +1,34 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef ,useCallback} from 'react';
 import Pusher from 'pusher-js';
 
 const usePusher = (chatId) => {
   const pusher = useRef(null);
   const channel = useRef(null);
   Pusher.logToConsole = true;
+
   useEffect(() => {
-    pusher.current = new Pusher('63ec3433f5f1ad17bcb5', {
-      cluster: 'ap2',
-      debug: true,
-    });
-    channel.current = pusher.current.subscribe(`chat.${chatId}`);
+    try {
+      pusher.current = new Pusher('63ec3433f5f1ad17bcb5', {
+        cluster: 'ap2',
+        debug: true,
+      });
+
+      if (!pusher.current.connection.state === 'connected') {
+        console.warn('Pusher connection is not in a "connected" state. Events may not work as expected.');
+      }
+
+      channel.current = pusher.current.subscribe(`chat.${chatId}`);
+    } catch (error) {
+      console.error('Error creating Pusher instance:', error);
+    }
 
     return () => {
-      if (pusher.current && channel.current) {
-        pusher.current.unsubscribe(channel.current.name);
+      try {
+        if (pusher.current && channel.current) {
+          pusher.current.unsubscribe(channel.current.name);
+        }
+      } catch (error) {
+        console.error('Error unsubscribing from Pusher channel:', error);
       }
     };
   }, [chatId]);
@@ -24,13 +38,13 @@ const usePusher = (chatId) => {
       console.log('message.sent event data: ', data);
       callback(data);
     });
-    
+
     return () => {
       channel.current.unbind('message.sent', callback);
     };
   };
 
-  const bindReadReceipt = (callback) => {
+  const bindReadReceipt = useCallback((callback) => {
     console.log("Binding ReadReceipt event for channel: ", channel.current);
     channel.current.bind('ReadReceipt', (data) => {
       console.log('ReadReceipt event data: ', data);
@@ -38,11 +52,11 @@ const usePusher = (chatId) => {
       console.log(`MessageId: ${messageId}, Seen: ${seen}`);
       callback({ messageId, seen });
     });
+  
     return () => {
       channel.current.unbind('ReadReceipt', callback);
     };
-  };
-  
+  }, [chatId]);
 
   const bindUserTyping = (callback) => {
     channel.current.bind('UserTyping', (data) => {

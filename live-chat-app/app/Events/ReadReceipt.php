@@ -8,26 +8,30 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 use App\Models\Message;
+use App\Models\Chat;
 use Illuminate\Support\Facades\Log;
 
 class ReadReceipt implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    public $chatId;
     public $messageId;
     public $seen;
 
-    public function __construct($messageId, $seen)
+    public function __construct($messageId, $seen ,$chatId)
     {
-        $this->messageId = $messageId;
-        $this->seen = $seen;
-        Log::info('ReadReceipt event constructed for message: ' . $this->messageId);
+        {
+            $this->chatId = $chatId;
+            $this->messageId = $messageId;
+            $this->seen = $seen;
+            Log::info('ReadReceipt event constructed for message: ' . $this->messageId);
+        }
     }
 
     public function broadcastOn()
     {
-        // We use a separate channel for the read receipt event with the message ID in the channel name.
-        $channel = new Channel('chat.' . $this->messageId);
+        $channel = new Channel('chat.' . $this->chatId);
         Log::info('ReadReceipt event will broadcast on channel: ' . $channel->name);
         return  $channel;
     }

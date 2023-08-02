@@ -218,5 +218,21 @@ public function agentslist(Request $request)
         'rows' => $rows
     ]);
 }
+ // Logout function handles user deauthentication
+ public function logout(Request $request)
+ {
+     // Check if the user is authenticated
+     if ($request->user()) {
+         // Delete all tokens for the authenticated user, effectively logging them out
+         $request->user()->tokens()->delete();
+
+         // Return success message
+         return response()->json(['message' => 'Logged out successfully'], 200);
+     } else {
+         // Return error message if no user is authenticated
+         return response()->json(['message' => 'User not authenticated'], 401);
+     }
+ }
+
 
 }

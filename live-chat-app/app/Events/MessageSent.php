@@ -43,7 +43,7 @@ class MessageSent implements ShouldBroadcast
             'chat_id' => $this->message->chat_id,
             'sender' => [
                 'id' => $this->message->user_id,
-                'name' => $this->message->name,
+                'name' => $this->message->user->name,
             ],
             'created_at' => $this->message->created_at->toDateTimeString(),
         ],

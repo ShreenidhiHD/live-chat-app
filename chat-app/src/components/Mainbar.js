@@ -1,7 +1,10 @@
 import React from 'react';
 import { Toolbar, Typography, IconButton } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import Logout from '../components/Logout'
+
+
+
 
 const MainBar = ({ chatId, chats, user, handleProfileClick, handleLogout }) => {
   return (
@@ -10,11 +13,9 @@ const MainBar = ({ chatId, chats, user, handleProfileClick, handleLogout }) => {
         <AccountCircle />
       </IconButton>
       <Typography variant="h6" style={{ flexGrow: 1 }}>
-        {/* {user.curname} */}
+        {user.name}
       </Typography>
-      <IconButton edge="end" color="inherit" aria-label="logout" onClick={handleLogout}>
-        <ExitToAppIcon />
-      </IconButton>
+      <Logout onLogout={handleLogout} />
     </Toolbar>
   );
 }

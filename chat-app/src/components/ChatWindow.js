@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import Typing from './Typing'; 
 import Message from './Message';
 import MainBar from './Mainbar';
+import CircularProgress from '@mui/material/CircularProgress';
 
 const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange, handleSendMessage }) => {
   const navigate = useNavigate();
@@ -32,6 +33,8 @@ const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange
     scrollToBottom();
   }, [messages]); 
   
+  
+
   return (
     <div>
       <Grid container>
@@ -40,10 +43,7 @@ const ChatWindow = ({ user, chatId, messages, newMessage, handleNewMessageChange
             {messages && messages.length > 0 ? (
               <List style={{ flexGrow: 1, overflow: 'auto' }}>
                 {messages.map((message, index) => (
-                 
                 <Message key={index} message={message} user={user} isUserMessage={message.isUserMessage}  />
-
-                  
                 ))}
                 
                 <div ref={messagesEndRef} />
