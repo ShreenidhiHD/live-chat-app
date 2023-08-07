@@ -8,8 +8,9 @@ use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use App\Events\UserTyping;
 
 class ChatController extends Controller
 {
@@ -120,43 +121,59 @@ class ChatController extends Controller
 
    
 
-public function readMessage(Request $request)
-{
-    $request->validate([
-        'message_id' => 'required|exists:messages,id'
-    ]);
-
-    $message = Message::find($request->message_id);
-    $user = $request->user();
-    $currentUserId = $user->id;
-
-    if ($currentUserId != $message->user_id) {
-        // Retrieve all messages with a lower id and the same user_id
-        $messages = Message::where('id', '<', $message->id)
-            ->where('user_id', $message->user_id)
-            ->where('seen', false) // Only mark unseen messages as read
-            ->get();
-
-        foreach ($messages as $msg) {
-            $msg->seen = true;
-            $msg->save();
-
-            Log::info('About to trigger ReadReceipt event for message: ' . $msg->id);
-            broadcast(new ReadReceipt($msg->id, true));
-            Log::info('ReadReceipt event triggered for message: ' . $msg->id);
-
+    public function readMessage(Request $request)
+    
+    {
+        $request->validate([
+            'message_ids' => 'required|array',
+            'message_ids.*' => 'exists:messages,id'
+        ]);
+    
+        $messages = Message::whereIn('id', $request->message_ids)->get();
+        $user = $request->user();
+        $currentUserId = $user->id;
+    
+        foreach($messages as $message) {
+            if ($currentUserId != $message->user_id) {
+                // Retrieve all messages with a lower id and the same user_id
+                $unseenMessages = Message::where('id', '<=', $message->id)
+                    ->where('user_id', $message->user_id)
+                    ->where('seen', false) // Only fetch unseen messages
+                    ->get();
+    
+                if ($unseenMessages->isNotEmpty()) {
+                    foreach ($unseenMessages as $msg) {
+                        $msg->seen = true;
+                        $msg->save();
+    
+                        $chatId = $msg->chat_id;
+    
+                        Log::info('About to trigger ReadReceipt event for message: ' . $msg->id);
+                        broadcast(new ReadReceipt($msg->id, true, $chatId));
+                        Log::info('ReadReceipt event triggered for message: ' . $msg->id);
+                    }
+                }
+            }
         }
+    
+        return response()->json('Previous messages marked as read');
     }
+    
 
-    return response()->json('Previous messages marked as read');
+
+    
+
+
+    public function userTyping(Request $request)
+{
+    // $username = $request->input('username');
+    $chatId = $request->input('chat_id'); 
+
+    event(new UserTyping($chatId)); 
+
+    return response()->json(['message' => 'Event fired!']);
 }
 
 
-
-    public function typing(Request $request)
-    {
-        broadcast(new UserTyping($request->user()->name));
-        return response()->json('Broadcasted typing event');
-    }
 
 }

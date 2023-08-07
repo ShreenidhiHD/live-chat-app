@@ -53,7 +53,7 @@ const Message = ({ message, user }) => {
             {new Date(created_at).toLocaleString()}
           </Typography>
           <Typography variant="caption" color="white">
-            {seen === undefined ? 'Delivered' : seen ? 'Seen' : 'Delivered'}
+            {seen ? 'Seen' : 'Delivered'}
           </Typography>
         </Box>
       </Box>

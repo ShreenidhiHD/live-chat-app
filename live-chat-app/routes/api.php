@@ -25,11 +25,13 @@ Route::post('/registeruser', [UserController::class, 'registeruser']);
 Route::post('/register', [UserController::class, 'registerUserWithCompany']);
 Route::post('/login', [UserController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [UserController::class, 'logout'])->middleware('auth:sanctum');
     Route::post('/send', [MessageController::class, 'sendMessage']);
     Route::get('agent/chats', [ChatController::class, 'getChats']);
     Route::post('/chats', [ChatController::class, 'createChat']);
+    Route::post('/user-typing', [ChatController::class, 'userTyping']); 
     Route::post('/messages/read', [ChatController::class, 'readMessage']);
-    Route::post('/typing', [ChatController::class, 'typing']);    
+      
     Route::get('/chats/latest', [ChatController::class, 'getLatestChat']);
     Route::get('/chats/{chat}/messages', [ChatController::class, 'getChatMessages']);
     Route::get('/userdata', [UserController::class, 'userprofile']);

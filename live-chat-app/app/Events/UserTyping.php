@@ -2,6 +2,7 @@
 
 namespace App\Events;
 
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
@@ -12,14 +13,28 @@ class UserTyping implements ShouldBroadcast
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     public $username;
+    public $chatId;
 
-    public function __construct($username)
+    /**
+     * Create a new event instance.
+     *
+     * 
+     * @param  int  $chatId
+     * @return void
+     */
+    public function __construct( $chatId)
     {
-        $this->username = $username;
+        // $this->username = $username;
+        $this->chatId = $chatId;
     }
 
+    /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return \Illuminate\Broadcasting\Channel|array
+     */
     public function broadcastOn()
     {
-        return new \Illuminate\Broadcasting\Channel('chat');
+        return new Channel('chat.' . $this->chatId . '.typing');
     }
 }
