@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
+use App\Events\SessionChanged;
 
 class UserController extends Controller
 {
@@ -93,41 +94,24 @@ class UserController extends Controller
     return response()->json(['user' => $user], 201);
 }
 
-    
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required'
-        ]);
-    
-        $user = User::where('email', $request->email)->first();
-    
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Invalid credentials'], 401);
-        }
-    
-        $token = $user->createToken('apptoken')->plainTextToken;
-    
-        return response()->json(['token' => $token, 'user' => $user]);
-    }
 
-    public function userprofile(Request $request)
-    {
+public function userprofile(Request $request)
+{
+    $user = $request->user();
 
-       $user = $request->user();
+    if ($user) {
+        $userId = $user->id;
+        $userName = $user->name;
 
-        if ($user) {
-            $userId = $user->id;
-            $userName = $user->name;
-        
-            return [
-                'id' => $userId,
-                'name' => $userName,
-            ];
-        }   
-    }
+        return [
+            'id' => $userId,
+            'name' => $userName,
+            'status' => 'online'
+        ];
+    }   
+}
+
     public function userrole(Request $request){
         $user = $request->user();
 
@@ -223,9 +207,15 @@ public function agentslist(Request $request)
  {
      // Check if the user is authenticated
      if ($request->user()) {
+         // Get the user's name and id before logging out
+         $username = $request->user()->name;
+         $userId = $request->user()->id;
          // Delete all tokens for the authenticated user, effectively logging them out
          $request->user()->tokens()->delete();
-
+         // Dispatch UserOffline event after successful logout
+         broadcast(new SessionChanged($userId, 'offline')); 
+         // Add log to verify if the event is triggered
+         Log::info('User ' . $username . ' logged out successfully.');
          // Return success message
          return response()->json(['message' => 'Logged out successfully'], 200);
      } else {
@@ -233,6 +223,32 @@ public function agentslist(Request $request)
          return response()->json(['message' => 'User not authenticated'], 401);
      }
  }
+     
+     public function login(Request $request)
+     {
+         $request->validate([
+             'email' => 'required|email',
+             'password' => 'required'
+         ]);
+     
+         $user = User::where('email', $request->email)->first();
+         
+         if (!$user || !Hash::check($request->password, $user->password)) {
+             return response()->json(['message' => 'Invalid credentials'], 401);
+         }
+     
+         $token = $user->createToken('apptoken')->plainTextToken;
+     
+         \Log::info('About to fire SessionChanged event');
+         // Dispatch UserOnline event after successful login
+         broadcast(new SessionChanged($user->id, 'online'));
+     
+         // Add log to verify if the event is triggered
+         Log::info('User ' . $user->name . ' logged in successfully.');
+     
+         return response()->json(['token' => $token, 'user' => $user]);
+     }  
+ }
 
 
-}
+

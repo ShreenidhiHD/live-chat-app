@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
 use Illuminate\Http\Request;
+use App\Events\UserTyping;
 
 class ChatController extends Controller
 {
@@ -163,10 +164,16 @@ class ChatController extends Controller
     
 
 
-    public function typing(Request $request)
-    {
-        broadcast(new UserTyping($request->user()->name));
-        return response()->json('Broadcasted typing event');
-    }
+    public function userTyping(Request $request)
+{
+    // $username = $request->input('username');
+    $chatId = $request->input('chat_id'); 
+
+    event(new UserTyping($chatId)); 
+
+    return response()->json(['message' => 'Event fired!']);
+}
+
+
 
 }

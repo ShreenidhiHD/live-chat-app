@@ -74,21 +74,7 @@ export const createChat = async (authToken) => {
   };
   
   
-  // export const markMessageAsRead = async (authToken, messageId) => {
-  //   try {
-  //     const response = await axios.post(
-  //       'http://localhost:8000/api/messages/read',
-  //       {
-  //         message_id: messageId,
-  //       },
-  //       { headers: { Authorization: `Bearer ${authToken}` } }
-  //     );
-  //     console.log('Message Marked As Read:', response.data);
-  //   } catch (error) {
-  //     console.error(error);
-  //     throw error;
-  //   }
-  // };
+  
 
   export const markMessageAsRead = async (authToken, messageIds) => {
     try {
@@ -105,4 +91,22 @@ export const createChat = async (authToken) => {
       throw error;
     }
   };
+
+  export const notifyUserTyping = async (authToken, typingData) => {
+    try {
+      const response = await axios.post(
+        'http://localhost:8000/api/user-typing',
+        {
+          chat_id: typingData.chatId
+          // user_id: typingData.userId
+        },
+        { headers: { Authorization: `Bearer ${authToken}` } }
+      );
+      console.log('User Typing Notification:', response.data);
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
+  };
+  
   

@@ -3,9 +3,11 @@ import ChatWindow from '../components/ChatWindow';
 import MainBar from '../components/Mainbar';
 import Grid from '@mui/material/Grid';
 import { fetchUserData } from '../api/userApi';
-import { fetchLatestChat, fetchMessages, createChat, sendMessage ,markMessageAsRead} from '../api/chatApi';
+import { fetchLatestChat, fetchMessages, createChat, sendMessage ,markMessageAsRead,notifyUserTyping} from '../api/chatApi';
 import usePusher from '../services/pusherService';
 import CircularProgress from '@mui/material/CircularProgress';
+import debounce from 'lodash.debounce';
+
 
 const UserChat = () => {
   const [user, setUserData] = useState(null);
@@ -16,6 +18,8 @@ const UserChat = () => {
   const [messagesToMarkAsRead, setMessagesToMarkAsRead] = useState([]);
   const { bindMessageSent , bindReadReceipt} = usePusher(chatId);
 
+
+  
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -40,6 +44,20 @@ const UserChat = () => {
 
     fetchData();
   }, [authToken]);
+
+  const handleUserTyping = debounce(async () => {
+    const typingData = {
+      chatId: chatId,
+     
+    };
+  
+    try {
+      await notifyUserTyping(authToken, typingData);
+    } catch (error) {
+      console.error('Error notifying user typing:', error);
+    }
+  }, 300);
+  
 
   useEffect(() => {
     if (bindMessageSent) {
@@ -147,13 +165,15 @@ const UserChat = () => {
       </Grid>
      
       <ChatWindow
-        user={user}
-        chatId={chatId}
-        messages={messages}
-        newMessage={newMessage}
-        handleNewMessageChange={handleNewMessageChange}
-        handleSendMessage={handleSendMessage}
-      />
+  user={user}
+  chatId={chatId}
+  messages={messages}
+  newMessage={newMessage}
+  handleNewMessageChange={handleNewMessageChange}
+  handleSendMessage={handleSendMessage}
+  handleUserTyping={handleUserTyping}
+/>
+
     </div>
   );
 };

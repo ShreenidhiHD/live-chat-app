@@ -8,7 +8,7 @@ const usePusher = (chatId) => {
 
   useEffect(() => {
     try {
-      pusher.current = new Pusher('63ec3433f5f1ad17bcb5', {
+      pusher.current = new Pusher('b2a6cca875e0b6231687', {
         cluster: 'ap2',
         debug: true,
       });

@@ -2,7 +2,7 @@ import React from 'react';
 import { Toolbar, Typography, IconButton } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import Logout from '../components/Logout'
-
+import OnlineOfflineStatus from './OnlineOfflineStatus';
 
 
 
@@ -15,6 +15,7 @@ const MainBar = ({ chatId, chats, user, handleProfileClick, handleLogout }) => {
       <Typography variant="h6" style={{ flexGrow: 1 }}>
         {user.name}
       </Typography>
+      <OnlineOfflineStatus  user={user}/>
       <Logout onLogout={handleLogout} />
     </Toolbar>
   );

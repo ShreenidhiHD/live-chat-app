@@ -8,6 +8,8 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Avatar from '@mui/material/Avatar';
 import Grid from '@mui/material/Grid';
+import OnlineOfflineStatus from './OnlineOfflineStatus';
+
 const ChatList = ({ chats, selectedChatId, setSelectedChatId, searchQuery, setSearchQuery }) => {
   const handleChatClick = (chatId) => {
     setSelectedChatId(chatId);
@@ -35,6 +37,7 @@ const ChatList = ({ chats, selectedChatId, setSelectedChatId, searchQuery, setSe
               <Avatar alt={chat.customer.name} src="https://mui.com/static/images/avatar/1.jpg" />
             </ListItemIcon>
             <ListItemText primary={chat.customer.name} secondary={chat.customer.email} />
+            <OnlineOfflineStatus  user={chat.customer}/>
           </ListItem>
         ))}
       </List>
