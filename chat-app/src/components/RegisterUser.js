@@ -27,7 +27,7 @@ const RegisterUser = () => {
     };
 
     // Show the toast message before registration starts
-    const registrationPromise = toast.promise(axios.post(`${API_BASE_URL}api/registeruser`, newUser), {
+    const registrationPromise = toast.promise(axios.post(`${API_BASE_URL}/api/registeruser`, newUser), {
       pending: 'Registering...',
       success: 'User registered successfully. Please login to continue.',
       error: 'Registration failed. Please try again.',
