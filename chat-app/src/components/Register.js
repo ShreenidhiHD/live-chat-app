@@ -6,6 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
+const API_BASE_URL = 'http://170.187.232.251';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -36,14 +37,16 @@ const Register = () => {
         },
       };
       const body = JSON.stringify(newUser);
-      const res = await axios.post('http://localhost:8000/api/register', body, config);
+      const res = await axios.post(`${API_BASE_URL}/api/register`, body, config);
       console.log('User and Company registered successfully', res.data);
     } catch (error) {
       console.error(error.response.data);
     }
   };
-
+  console.log(`API_BASE_URL is: ${API_BASE_URL}`);
   return (
+    
+
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
       <Card>
         <CardContent>

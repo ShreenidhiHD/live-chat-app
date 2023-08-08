@@ -1,8 +1,9 @@
 import axios from 'axios';
+const API_BASE_URL = 'http://170.187.232.251';
 
 export const fetchChats = async (authToken) => {
   try {
-    const response = await axios.get(`http://localhost:8000/api/agent/chats`, {
+    const response = await axios.get(`${API_BASE_URL}/api/agent/chats`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     return response.data;
