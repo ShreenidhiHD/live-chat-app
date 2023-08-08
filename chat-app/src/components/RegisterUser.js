@@ -4,7 +4,7 @@ import { Card, CardContent, TextField, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+const API_BASE_URL = 'http://170.187.232.251';
 const RegisterUser = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -27,7 +27,7 @@ const RegisterUser = () => {
     };
 
     // Show the toast message before registration starts
-    const registrationPromise = toast.promise(axios.post('http://localhost:8000/api/registeruser', newUser), {
+    const registrationPromise = toast.promise(axios.post(`${API_BASE_URL}api/registeruser`, newUser), {
       pending: 'Registering...',
       success: 'User registered successfully. Please login to continue.',
       error: 'Registration failed. Please try again.',

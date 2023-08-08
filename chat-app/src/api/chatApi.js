@@ -15,7 +15,7 @@ export const fetchChats = async (authToken) => {
 
 export const fetchLatestChat = async (authToken) => {
   try {
-    const response = await axios.get(`http://localhost:8000/api/chats/latest`, {
+    const response = await axios.get(`${API_BASE_URL}/api/chats/latest`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     return response.data;
@@ -27,7 +27,7 @@ export const fetchLatestChat = async (authToken) => {
 
 export const fetchMessages = async (authToken, chatId) => {
   try {
-    const response = await axios.get(`http://localhost:8000/api/chats/${chatId}/messages`, {
+    const response = await axios.get(`${API_BASE_URL}/api/chats/${chatId}/messages`, {
       headers: { Authorization: `Bearer ${authToken}` },
     });
     return response.data;
@@ -44,7 +44,7 @@ export const fetchMessages = async (authToken, chatId) => {
 export const createChat = async (authToken) => {
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/chats',
+        `${API_BASE_URL}/api/chats`,
         {},
         { headers: { Authorization: `Bearer ${authToken}` } }
       );
@@ -58,7 +58,7 @@ export const createChat = async (authToken) => {
   export const sendMessage = async (authToken, messageData) => {
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/send',
+        `${API_BASE_URL}/api/send`,
         {
           content: messageData.content,
           chat_id: messageData.chatId,

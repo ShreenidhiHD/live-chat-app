@@ -5,7 +5,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
-
+const API_BASE_URL = 'http://170.187.232.251';
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -14,12 +14,12 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8000/api/login', { email, password });
+      const response = await axios.post(`${API_BASE_URL}/api/login`, { email, password });
       if (response.status === 200) {
         localStorage.setItem('authToken', response.data.token);
 
         // Fetch user role after successful login
-        const roleResponse = await axios.get('http://localhost:8000/api/userrole', {
+        const roleResponse = await axios.get(`${API_BASE_URL}/api/userrole`, {
           headers: {
             Authorization: `Bearer ${response.data.token}`,
           },
