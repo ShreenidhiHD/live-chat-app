@@ -80,7 +80,7 @@ export const createChat = async (authToken) => {
   export const markMessageAsRead = async (authToken, messageIds) => {
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/messages/read',
+        `${API_BASE_URL}/api/messages/read`,
         {
           message_ids: messageIds,  // Note the change here
         },
@@ -96,7 +96,7 @@ export const createChat = async (authToken) => {
   export const notifyUserTyping = async (authToken, typingData) => {
     try {
       const response = await axios.post(
-        'http://localhost:8000/api/user-typing',
+        `${API_BASE_URL}/api/user-typing`,
         {
           chat_id: typingData.chatId
           // user_id: typingData.userId

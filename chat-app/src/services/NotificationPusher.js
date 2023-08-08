@@ -4,13 +4,13 @@ import Pusher from 'pusher-js';
 const NotificationPusher = (userId) => {
   const pusher = useRef(null);
   const channel = useRef(null);
-  Pusher.logToConsole = true;
+  Pusher.logToConsole = false;
   const isBoundRef = useRef(false);
   useEffect(() => {
     try {
       pusher.current = new Pusher('b2a6cca875e0b6231687', {
         cluster: 'ap2',
-        debug: true,
+        debug: false,
       });
 
       if (!pusher.current.connection.state === 'connected') {
