@@ -7,7 +7,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Container from '@mui/material/Container'; 
-
+const API_BASE_URL = 'http://170.187.232.251';
 
 const OwnerDashboard = () => {
   const [agentData, setAgentData] = useState({
@@ -39,7 +39,7 @@ const OwnerDashboard = () => {
       };
 
       const body = JSON.stringify(agentData);
-      const res = await axios.post('http://localhost:8000/api/registeranotheruser', body, config);
+      const res = await axios.post(`${API_BASE_URL}/api/registeranotheruser`, body, config);
       console.log('Agent added successfully', res.data);
 
       // Show an alert upon successful agent addition
