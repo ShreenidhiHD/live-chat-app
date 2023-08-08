@@ -6,7 +6,7 @@ import CardContent from '@mui/material/CardContent';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Grid from '@mui/material/Grid';
-const API_BASE_URL = 'http://170.187.232.251';
+const API_BASE_URL = 'http://170.187.232.251:80';
 
 const Register = () => {
   const [formData, setFormData] = useState({
